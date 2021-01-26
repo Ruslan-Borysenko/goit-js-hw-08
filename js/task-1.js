@@ -1,23 +1,26 @@
-import images from './gallery-images.js';
+import { images } from './gallery-images.js';
 
 // variables
 const ul = document.querySelector('.gallery');
 const lightboxRef = document.querySelector('.lightbox');
+const lightboxImgRef = document.querySelector('.lightbox__image');
 const lightboxOverlayRef = document.querySelector('.lightbox__overlay');
 const lightboxCloseBtnRef = document.querySelector(
   'button[data-action="close-lightbox"]',
 );
-const lightboxImgRef = document.querySelector('.lightbox__image');
+
 let currentIndex = 0;
 
-// functions
 const createMarkup = function (array) {
-  array.forEach((element, index) => {
-    const li = `<li class="gallery__item"><a
-    class="gallery__link" href="${element.original}"> <img class="gallery__image" src="${element.preview}"
-      data-source="${element.original}" alt="${element.description}" data-index="${index}"/></a></li>`;
-    ul.insertAdjacentHTML('beforeend', li);
-  });
+  let readyImgArrayDOM = array.map(
+    element =>
+      `<li class="gallery__item">
+        <a class="gallery__link" href="${element.original}"><img class="gallery__image" src="${element.preview}"
+      data-fullsize="${element.original}" alt="${element.description}"/>
+       </a>
+      </li>`,
+  );
+  ul.insertAdjacentHTML('beforeend', readyImgArrayDOM.join(''));
 };
 
 const openLightbox = function () {
@@ -27,49 +30,57 @@ const openLightbox = function () {
 };
 
 const closeLightbox = function () {
-  lightboxRef.classList.toggle('is-open');
   window.removeEventListener('keydown', onPressEscape);
   window.removeEventListener('keydown', onPressArrow);
+  lightboxRef.classList.toggle('is-open');
   lightboxImgRef.src = '';
 };
 
 const handleUlClick = function (event) {
   event.preventDefault();
 
-  const target = event.target;
-  const fullSizeImg = target.dataset.source;
-  currentIndex = Number(target.dataset.index);
+  // const {target: {dataset, nodeName}} = event;
+  const { dataset, nodeName } = event.target;
+  if (nodeName !== 'IMG') return;
 
-  if (target.nodeName !== 'IMG') return;
-  lightboxImgRef.src = fullSizeImg;
+  const { fullsize } = dataset;
+
+  lightboxImgRef.src = fullsize;
   openLightbox();
 };
 
-const onPressEscape = function (event) {
-  if (event.code === 'Escape') {
+const onPressEscape = function ({ code }) {
+  if (code === 'Escape') {
     closeLightbox();
   }
 };
 
-const onPressArrow = function (event) {
-  if (event.code === 'ArrowLeft') {
-    if (currentIndex > 0) {
-      currentIndex -= 1;
-    } else {
-      currentIndex = images.length - 1;
+const onPressArrow = function ({ code }) {
+  const arrayImg = document.querySelectorAll('.gallery img');
+  for (let i = 0; i < arrayImg.length; i += 1) {
+    if (
+      lightboxImgRef.src === arrayImg[i].dataset.fullsize &&
+      code === 'ArrowLeft'
+    ) {
+      if (i === 0) {
+        i = arrayImg.length;
+      }
+      lightboxImgRef.src = arrayImg[i - 1].dataset.fullsize;
+      lightboxImgRef.alt = arrayImg[i - 1].alt;
+      return;
     }
-    const nextImg = images[currentIndex].original;
-    lightboxImgRef.src = nextImg;
-  }
 
-  if (event.code === 'ArrowRight') {
-    if (currentIndex < images.length - 1) {
-      currentIndex += 1;
-    } else {
-      currentIndex = 0;
+    if (
+      lightboxImgRef.src === arrayImg[i].dataset.fullsize &&
+      code == 'ArrowRight'
+    ) {
+      if (i === arrayImg.length - 1) {
+        i = -1;
+      }
+      lightboxImgRef.src = arrayImg[i + 1].dataset.fullsize;
+      lightboxImgRef.alt = arrayImg[i + 1].alt;
+      return;
     }
-    const nextImg = images[currentIndex].original;
-    lightboxImgRef.src = nextImg;
   }
 };
 
